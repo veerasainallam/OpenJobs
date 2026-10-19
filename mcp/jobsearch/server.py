@@ -247,8 +247,9 @@ def target_titles() -> dict:
     return {"titles": TARGET_TITLES}
 
 
-def _run_http(host: str, port: int, allowed_hosts: list[str], allow_any_host: bool) -> None:
-    """Serve over streamable HTTP at http://{host}:{port}/mcp (for tunnels / remote clients).
+def _run_http(host: str, port: int, allowed_hosts: list[str], allow_any_host: bool,
+              transport: str = "streamable-http") -> None:
+    """Serve over HTTP for tunnels / remote clients: streamable HTTP at /mcp, or SSE at /sse.
 
     Host-header (DNS-rebinding) protection stays on: only localhost plus
     `allowed_hosts` are accepted. A tunnel's public hostname must be added
@@ -264,7 +265,7 @@ def _run_http(host: str, port: int, allowed_hosts: list[str], allow_any_host: bo
         allowed_hosts=local + allowed_hosts,
         allowed_origins=[f"http://{h}" for h in local] + [f"https://{h}" for h in allowed_hosts],
     )
-    mcp.run(transport="streamable-http")
+    mcp.run(transport=transport)
 
 
 if __name__ == "__main__":
@@ -272,6 +273,8 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="jobsearch MCP server")
     ap.add_argument("--http", action="store_true",
                     help="serve over streamable HTTP at /mcp instead of stdio")
+    ap.add_argument("--sse", action="store_true",
+                    help="serve legacy SSE at /sse instead of streamable HTTP at /mcp (implies --http)")
     ap.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8000")))
     ap.add_argument("--allowed-host", action="append", default=[],
@@ -280,7 +283,8 @@ if __name__ == "__main__":
                     help="disable Host-header checks (needed for random quick-tunnel hostnames)")
     a = ap.parse_args()
     env_hosts = [h.strip() for h in os.environ.get("JOBSEARCH_ALLOWED_HOSTS", "").split(",") if h.strip()]
-    if a.http:
-        _run_http(a.host, a.port, a.allowed_host + env_hosts, a.allow_any_host)
+    if a.http or a.sse:
+        _run_http(a.host, a.port, a.allowed_host + env_hosts, a.allow_any_host,
+                  transport="sse" if a.sse else "streamable-http")
     else:
         mcp.run()

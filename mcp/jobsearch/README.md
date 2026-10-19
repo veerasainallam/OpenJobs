@@ -59,7 +59,13 @@ cloudflared tunnel --url http://localhost:8000
 The MCP endpoint is `https://<tunnel-host>/mcp`. Add it in claude.ai →
 Settings → Connectors → Add custom connector.
 
-- Flags: `--host` (default `127.0.0.1`), `--port` (default `8000`, or `$PORT`),
+Legacy SSE clients: use `./run.sh --sse ...` (or `.venv/bin/python server_sse.py ...`,
+same flags) and connect to `https://<tunnel-host>/sse` instead. No extra
+dependencies are needed — uvicorn/starlette come with `mcp[cli]`.
+
+Your machine must stay awake (and the server + tunnel running) while you use it.
+
+- Flags: `--sse` (serve `/sse` instead of `/mcp`), `--host` (default `127.0.0.1`), `--port` (default `8000`, or `$PORT`),
   `--allowed-host` (repeatable, or `JOBSEARCH_ALLOWED_HOSTS=a.com,b.com`).
 - Host-header (DNS-rebinding) protection is on by default; requests for any
   hostname other than localhost/allowed hosts get `421`. `--allow-any-host`
@@ -78,6 +84,6 @@ careers-page URL (`boards.greenhouse.io/{token}`, `lever.co/{company}`).
 
 ## Notes
 
-- Tested 2026-10-19: Greenhouse ✅ live data · RemoteOK ✅ · Lever ✅ (200, code path verified; most firms migrated off Lever — find current slugs from careers URLs) · Arbeitnow/Remotive ⚠️ unreachable from the build sandbox (proxy blocks), expected to work on a normal network.
+- Tested 2026-10-19: Greenhouse ✅ live data · RemoteOK ✅ · Lever ✅ (200, code path verified; most firms migrated off Lever — find current slugs from careers URLs) · Remotive ✅ (endpoint moved to remotive.com/api, fixed 2026-10-19) · Arbeitnow ⚠️ unreachable from the build sandbox (proxy blocks api.arbeitnow.com), expected to work on a normal network.
 - Paid upgrades (not included): Adzuna (free 1k–5k calls/day, key), JSearch (RapidAPI).
 - Rate limits are polite defaults; don't hammer the boards.
