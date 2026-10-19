@@ -148,7 +148,7 @@ def search_remotive(keyword: str, category: str | None = None,
     if category:
         params["category"] = category
     with _client() as c:
-        r = c.get("https://remotive.io/api/remote-jobs", params=params)
+        r = c.get("https://remotive.com/api/remote-jobs", params=params)
         r.raise_for_status()
         items = r.json().get("jobs", [])
     jobs = []
