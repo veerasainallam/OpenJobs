@@ -44,3 +44,7 @@ bun.lock
 .claude/memory/
 career-dashboard
 package-lock.json
+
+# jobsearch MCP server venv
+mcp/jobsearch/.venv/
+__pycache__/

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "jobsearch": {
+      "command": "bash",
+      "args": ["mcp/jobsearch/run.sh"]
+    }
+  }
+}
