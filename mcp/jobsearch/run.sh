@@ -8,4 +8,4 @@ if [ ! -x .venv/bin/python ] || ! .venv/bin/python -c "import mcp, httpx" 2>/dev
   python3 -m venv .venv >&2
   .venv/bin/pip install --quiet "mcp[cli]<2" httpx >&2
 fi
-exec .venv/bin/python server.py
+exec .venv/bin/python server.py "$@"

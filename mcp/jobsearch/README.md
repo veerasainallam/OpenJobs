@@ -44,8 +44,28 @@ python3 -m venv .venv
 claude mcp add jobsearch -- /absolute/path/to/jobsearch-mcp/.venv/bin/python /absolute/path/to/jobsearch-mcp/server.py
 ```
 
-**claude.ai (Pro)** — Settings → Connectors → add MCP server (stdio servers need
-Claude Desktop or Code; web-hosted SSE version not included here).
+**claude.ai / remote clients (web mode)** — run the server over streamable HTTP
+on port 8000 and expose it with a tunnel:
+
+```bash
+# Named tunnel / your own domain (Host-header checks stay on):
+./run.sh --http --allowed-host jobs.example.com
+
+# cloudflared quick tunnel (random *.trycloudflare.com name each run):
+./run.sh --http --allow-any-host
+cloudflared tunnel --url http://localhost:8000
+```
+
+The MCP endpoint is `https://<tunnel-host>/mcp`. Add it in claude.ai →
+Settings → Connectors → Add custom connector.
+
+- Flags: `--host` (default `127.0.0.1`), `--port` (default `8000`, or `$PORT`),
+  `--allowed-host` (repeatable, or `JOBSEARCH_ALLOWED_HOSTS=a.com,b.com`).
+- Host-header (DNS-rebinding) protection is on by default; requests for any
+  hostname other than localhost/allowed hosts get `421`. `--allow-any-host`
+  turns it off — only use it with a tunnel, never by binding to `0.0.0.0`.
+- There is **no authentication**: anyone with the tunnel URL can call the tools.
+  They only read public job boards, but stop the tunnel when you're done.
 
 Restart the client after adding. Then: *"Use jobsearch to find Project Coordinator
 roles posted in the last 24 hours."*

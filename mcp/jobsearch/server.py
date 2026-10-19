@@ -247,5 +247,40 @@ def target_titles() -> dict:
     return {"titles": TARGET_TITLES}
 
 
+def _run_http(host: str, port: int, allowed_hosts: list[str], allow_any_host: bool) -> None:
+    """Serve over streamable HTTP at http://{host}:{port}/mcp (for tunnels / remote clients).
+
+    Host-header (DNS-rebinding) protection stays on: only localhost plus
+    `allowed_hosts` are accepted. A tunnel's public hostname must be added
+    via --allowed-host / JOBSEARCH_ALLOWED_HOSTS, or explicitly waived with
+    --allow-any-host (e.g. for cloudflared quick tunnels, whose name is random).
+    """
+    from mcp.server.transport_security import TransportSecuritySettings
+    mcp.settings.host = host
+    mcp.settings.port = port
+    local = ["127.0.0.1:*", "localhost:*", "[::1]:*"]
+    mcp.settings.transport_security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=not allow_any_host,
+        allowed_hosts=local + allowed_hosts,
+        allowed_origins=[f"http://{h}" for h in local] + [f"https://{h}" for h in allowed_hosts],
+    )
+    mcp.run(transport="streamable-http")
+
+
 if __name__ == "__main__":
-    mcp.run()
+    import argparse
+    ap = argparse.ArgumentParser(description="jobsearch MCP server")
+    ap.add_argument("--http", action="store_true",
+                    help="serve over streamable HTTP at /mcp instead of stdio")
+    ap.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
+    ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8000")))
+    ap.add_argument("--allowed-host", action="append", default=[],
+                    help="public hostname to accept (repeatable), e.g. jobs.example.com")
+    ap.add_argument("--allow-any-host", action="store_true",
+                    help="disable Host-header checks (needed for random quick-tunnel hostnames)")
+    a = ap.parse_args()
+    env_hosts = [h.strip() for h in os.environ.get("JOBSEARCH_ALLOWED_HOSTS", "").split(",") if h.strip()]
+    if a.http:
+        _run_http(a.host, a.port, a.allowed_host + env_hosts, a.allow_any_host)
+    else:
+        mcp.run()
